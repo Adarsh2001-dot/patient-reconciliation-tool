@@ -1,4 +1,5 @@
 import pandas as pd
+import io
 from fuzzywuzzy import fuzz
 
 def load_data(file1, file2):
@@ -15,5 +16,9 @@ def match_patients(df1, df2):
                 matches.append((row1['PatientID'], row2['PatientID'], score))
     return matches
 
-def export_to_excel(df, output_path="output/reconciled_data.xlsx"):
-    df.to_excel(output_path, index=False)
+def export_to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)
+    return output
