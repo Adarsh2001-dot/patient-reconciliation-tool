@@ -10,16 +10,13 @@ st.set_page_config(layout="wide", page_title="Patient Reconciliation Tool", page
 # Custom CSS styling
 st.markdown("""
     <style>
-    body {
-        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
-    }
-    html, body, .css-1v0mbdj, .css-1d391kg {
-        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
-        color: #333333;
+    html, body, .stApp {
+        background: linear-gradient(120deg, #f0f4f8 0%, #d9e2ec 50%, #bcccdc 100%) !important;
+        color: #102a43;
     }
     .stButton > button {
         border-radius: 10px;
-        background-color: #6a11cb;
+        background-color: #2f80ed;
         color: white;
         font-weight: bold;
         padding: 10px 20px;
@@ -27,7 +24,7 @@ st.markdown("""
         border: none;
     }
     .stButton > button:hover {
-        background-color: #2575fc;
+        background-color: #1366d6;
         cursor: pointer;
     }
     .stTextInput > div > div > input {
@@ -36,8 +33,8 @@ st.markdown("""
         border-radius: 8px;
         border: 1px solid #ccc;
     }
-    .stDataFrame {
-        background-color: #ffffffcc;
+    .stDataFrame, .stMarkdown {
+        background-color: #ffffffee;
         border-radius: 8px;
         padding: 10px;
     }
@@ -96,7 +93,7 @@ if file1 and file2:
                     st.markdown("**From File 2**")
                     st.json(right.to_dict())
 
-                if st.button(f"Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
+                if st.button(f"🚨 Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     log_data = {
                         "Time": timestamp,
@@ -111,7 +108,7 @@ if file1 and file2:
                         writer.writerow(log_data)
                     st.warning("Anomaly logged successfully!")
 
-        if st.button("Export Matched Records"):
+        if st.button("Export Matched Records Only"):
             export_rows = []
             for idx, row in filtered_matches.iterrows():
                 rec1 = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
