@@ -96,7 +96,7 @@ if file1 and file2:
                     st.markdown("**From File 2**")
                     st.json(right.to_dict())
 
-                if st.button(f"🚨 Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
+                if st.button(f"Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     log_data = {
                         "Time": timestamp,
