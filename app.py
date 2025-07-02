@@ -5,42 +5,66 @@ import csv
 from datetime import datetime
 import os
 
-st.set_page_config(layout="wide")
-st.title("🏥 Patient Data Reconciliation Tool")
+# Custom page config
+st.set_page_config(layout="wide", page_title="Patient Reconciliation Tool", page_icon=None)
 
-file1 = st.file_uploader("Upload Patient File 1", type=["xlsx"])
-file2 = st.file_uploader("Upload Patient File 2", type=["xlsx"])
+# Custom CSS styling for background, buttons, and layout
+st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(to right, #fdfbfb, #ebedee);
+    }
+    .stButton > button {
+        border-radius: 10px;
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        transition: 0.3s;
+    }
+    .stButton > button:hover {
+        background-color: #45a049;
+    }
+    .stTextInput > div > div > input {
+        background-color: #f0f0f5;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+    .stDataFrame {
+        background-color: #ffffffcc;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("Patient Record Reconciliation")
+
+file1 = st.file_uploader("Upload Patient File 1 (Excel)", type=["xlsx"])
+file2 = st.file_uploader("Upload Patient File 2 (Excel)", type=["xlsx"])
 
 if file1 and file2:
     df1, df2 = load_data(file1, file2)
 
-    # 🔍 Search Patients
-    st.subheader("🔎 Search Patients in Uploaded Files")
-    search_query = st.text_input("Enter Patient Name or ID to search:")
+    st.subheader("Search Patients")
+    search_query = st.text_input("Enter Name or ID:")
     if search_query:
-        filtered_df1 = df1[df1.apply(
-            lambda row: search_query.lower() in str(row['Name']).lower() or search_query.lower() in str(row['PatientID']).lower(), axis=1)]
-        filtered_df2 = df2[df2.apply(
-            lambda row: search_query.lower() in str(row['Name']).lower() or search_query.lower() in str(row['PatientID']).lower(), axis=1)]
-
-        st.write("📁 **Results from File 1**")
+        filtered_df1 = df1[df1.apply(lambda row: search_query.lower() in str(row['Name']).lower() or search_query.lower() in str(row['PatientID']).lower(), axis=1)]
+        filtered_df2 = df2[df2.apply(lambda row: search_query.lower() in str(row['Name']).lower() or search_query.lower() in str(row['PatientID']).lower(), axis=1)]
+        st.write("Results from File 1")
         st.dataframe(filtered_df1)
-
-        st.write("📁 **Results from File 2**")
+        st.write("Results from File 2")
         st.dataframe(filtered_df2)
 
-    # 👥 Match Duplicates
     matches = match_patients(df1, df2)
-    st.success(f"✅ Found {len(matches)} potential duplicate records.")
+    st.success(f"Found {len(matches)} potential duplicate records.")
 
     if matches:
         match_df = pd.DataFrame(matches, columns=["File1_PatientID", "File2_PatientID", "MatchScore"])
-        st.subheader("🔍 Duplicate Record Match Scores")
-
-        score_range = st.slider("🎯 Filter by Match Score", 0, 100, (85, 100))
-        filtered_matches = match_df[
-            (match_df["MatchScore"] >= score_range[0]) & (match_df["MatchScore"] <= score_range[1])
-        ]
+        st.subheader("Match Scores")
+        score_range = st.slider("Filter by Score", 0, 100, (85, 100))
+        filtered_matches = match_df[(match_df["MatchScore"] >= score_range[0]) & (match_df["MatchScore"] <= score_range[1])]
 
         def highlight_score(val):
             if val >= 95:
@@ -52,16 +76,13 @@ if file1 and file2:
 
         styled_df = filtered_matches.style.applymap(highlight_score, subset=["MatchScore"])
         st.dataframe(styled_df, use_container_width=True)
-
         st.bar_chart(filtered_matches.set_index("File1_PatientID")["MatchScore"])
 
-        # 🧍 Side-by-side + anomaly logging
-        st.subheader("📋 Side-by-Side Comparison & Anomaly Reporting")
+        st.subheader("Side-by-Side Comparison & Anomaly Flagging")
         for idx, row in filtered_matches.iterrows():
             left = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
             right = df2[df2["PatientID"] == row["File2_PatientID"]].iloc[0]
-
-            with st.expander(f"Compare: {row['File1_PatientID']} vs {row['File2_PatientID']} (Score: {row['MatchScore']})"):
+            with st.expander(f"{row['File1_PatientID']} vs {row['File2_PatientID']} (Score: {row['MatchScore']})"):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("**From File 1**")
@@ -85,27 +106,19 @@ if file1 and file2:
                         writer.writerow(log_data)
                     st.warning("Anomaly logged successfully!")
 
-    # 📤 Export merged file
     df1['Source'] = "File 1"
     df2['Source'] = "File 2"
     combined = pd.concat([df1, df2])
 
-    if st.button("📤 Export Reconciled Report"):
+    if st.button("Export Reconciled Report"):
         output_file = export_to_excel(combined)
-        st.success("📁 Reconciled data is ready!")
-        st.download_button(
-            label="⬇ Download Reconciled File",
-            data=output_file,
-            file_name="reconciled_output.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        st.success("Reconciled data is ready!")
+        st.download_button("Download Reconciled File", data=output_file, file_name="reconciled_output.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# 📂 View Anomaly Log
-st.subheader("📂 View Flagged Anomalies")
+st.subheader("Anomaly Log Viewer")
 if os.path.exists("anomaly_log.csv"):
     log_df = pd.read_csv("anomaly_log.csv")
     st.dataframe(log_df)
-    csv_bytes = log_df.to_csv(index=False).encode('utf-8')
-    st.download_button("⬇ Download Anomaly Log", data=csv_bytes, file_name="anomaly_log.csv", mime="text/csv")
+    st.download_button("Download Anomaly Log", data=log_df.to_csv(index=False).encode("utf-8"), file_name="anomaly_log.csv", mime="text/csv")
 else:
-    st.info("No anomalies have been flagged yet.")
+    st.info("No anomalies flagged yet.")
