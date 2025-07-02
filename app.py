@@ -3,6 +3,7 @@ from reconcile import load_data, match_patients, export_to_excel
 import pandas as pd
 import csv
 from datetime import datetime
+import os
 
 st.set_page_config(layout="wide")
 st.title("🏥 Patient Data Reconciliation Tool")
@@ -13,7 +14,7 @@ file2 = st.file_uploader("Upload Patient File 2", type=["xlsx"])
 if file1 and file2:
     df1, df2 = load_data(file1, file2)
 
-    # 🔍 SEARCH FEATURE
+    # 🔍 Search Patients
     st.subheader("🔎 Search Patients in Uploaded Files")
     search_query = st.text_input("Enter Patient Name or ID to search:")
     if search_query:
@@ -28,7 +29,7 @@ if file1 and file2:
         st.write("📁 **Results from File 2**")
         st.dataframe(filtered_df2)
 
-    # 👥 MATCH DUPLICATES
+    # 👥 Match Duplicates
     matches = match_patients(df1, df2)
     st.success(f"✅ Found {len(matches)} potential duplicate records.")
 
@@ -41,20 +42,20 @@ if file1 and file2:
             (match_df["MatchScore"] >= score_range[0]) & (match_df["MatchScore"] <= score_range[1])
         ]
 
-        # 🎨 Color-code match score
         def highlight_score(val):
             if val >= 95:
-                return "background-color: #c6f6d5"  # Green
+                return "background-color: #c6f6d5"
             elif val >= 85:
-                return "background-color: #fef3c7"  # Yellow
+                return "background-color: #fef3c7"
             else:
-                return "background-color: #fecaca"  # Red
+                return "background-color: #fecaca"
 
         styled_df = filtered_matches.style.applymap(highlight_score, subset=["MatchScore"])
         st.dataframe(styled_df, use_container_width=True)
 
         st.bar_chart(filtered_matches.set_index("File1_PatientID")["MatchScore"])
 
+        # 🧍 Side-by-side + anomaly logging
         st.subheader("📋 Side-by-Side Comparison & Anomaly Reporting")
         for idx, row in filtered_matches.iterrows():
             left = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
@@ -84,7 +85,7 @@ if file1 and file2:
                         writer.writerow(log_data)
                     st.warning("Anomaly logged successfully!")
 
-    # 📤 EXPORT MERGED FILE
+    # 📤 Export merged file
     df1['Source'] = "File 1"
     df2['Source'] = "File 2"
     combined = pd.concat([df1, df2])
@@ -98,3 +99,13 @@ if file1 and file2:
             file_name="reconciled_output.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+# 📂 View Anomaly Log
+st.subheader("📂 View Flagged Anomalies")
+if os.path.exists("anomaly_log.csv"):
+    log_df = pd.read_csv("anomaly_log.csv")
+    st.dataframe(log_df)
+    csv_bytes = log_df.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇ Download Anomaly Log", data=csv_bytes, file_name="anomaly_log.csv", mime="text/csv")
+else:
+    st.info("No anomalies have been flagged yet.")
