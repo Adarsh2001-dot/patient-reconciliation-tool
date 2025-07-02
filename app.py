@@ -111,7 +111,7 @@ if file1 and file2:
                         writer.writerow(log_data)
                     st.warning("Anomaly logged successfully!")
 
-        if st.button("Export Matched Records Only"):
+        if st.button("Export Matched Records"):
             export_rows = []
             for idx, row in filtered_matches.iterrows():
                 rec1 = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
