@@ -12,21 +12,27 @@ st.set_page_config(layout="wide", page_title="Patient Reconciliation Tool", page
 st.markdown("""
     <style>
     body {
-        background: linear-gradient(to right, #fdfbfb, #ebedee);
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+    }
+    html, body, .css-1v0mbdj, .css-1d391kg {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+        color: #333333;
     }
     .stButton > button {
         border-radius: 10px;
-        background-color: #4CAF50;
+        background-color: #6a11cb;
         color: white;
         font-weight: bold;
         padding: 10px 20px;
         transition: 0.3s;
+        border: none;
     }
     .stButton > button:hover {
-        background-color: #45a049;
+        background-color: #2575fc;
+        cursor: pointer;
     }
     .stTextInput > div > div > input {
-        background-color: #f0f0f5;
+        background-color: #ffffffcc;
         padding: 10px;
         border-radius: 8px;
         border: 1px solid #ccc;
@@ -91,7 +97,7 @@ if file1 and file2:
                     st.markdown("**From File 2**")
                     st.json(right.to_dict())
 
-                if st.button(f"🚨 Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
+                if st.button(f"Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     log_data = {
                         "Time": timestamp,
