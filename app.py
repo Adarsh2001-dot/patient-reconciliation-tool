@@ -81,19 +81,25 @@ if file1 and file2:
         st.bar_chart(filtered_matches.set_index("File1_PatientID")["MatchScore"])
 
         st.subheader("Side-by-Side Comparison & Anomaly Flagging")
+        compare_search = st.text_input("Search by Patient ID or Name in Matches:")
+
         for idx, row in filtered_matches.iterrows():
-            left = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
-            right = df2[df2["PatientID"] == row["File2_PatientID"]].iloc[0]
+            rec1 = df1[df1["PatientID"] == row["File1_PatientID"]].iloc[0]
+            rec2 = df2[df2["PatientID"] == row["File2_PatientID"]].iloc[0]
+
+            if compare_search and compare_search.lower() not in rec1["PatientID"].lower() and compare_search.lower() not in rec1["Name"].lower() and compare_search.lower() not in rec2["PatientID"].lower() and compare_search.lower() not in rec2["Name"].lower():
+                continue
+
             with st.expander(f"{row['File1_PatientID']} vs {row['File2_PatientID']} (Score: {row['MatchScore']})"):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("**From File 1**")
-                    st.json(left.to_dict())
+                    st.json(rec1.to_dict())
                 with col2:
                     st.markdown("**From File 2**")
-                    st.json(right.to_dict())
+                    st.json(rec2.to_dict())
 
-                if st.button(f"Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
+                if st.button(f"🚨 Flag Anomaly: {row['File1_PatientID']} vs {row['File2_PatientID']}", key=f"flag_{idx}"):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     log_data = {
                         "Time": timestamp,
@@ -122,14 +128,14 @@ if file1 and file2:
             })
         matched_df = pd.DataFrame(export_rows)
         matched_file = export_to_excel(matched_df)
-        st.download_button("Export Matched Records", data=matched_file, file_name="matched_duplicates.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("Download Matched Records", data=matched_file, file_name="matched_duplicates.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
         # Export full reconciled report
         df1['Source'] = "File 1"
         df2['Source'] = "File 2"
         combined = pd.concat([df1, df2])
         reconciled_output = export_to_excel(combined)
-        st.download_button("Export Full Reconciled Report", data=reconciled_output, file_name="reconciled_output.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("Download Full Reconciled Report", data=reconciled_output, file_name="reconciled_output.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 st.subheader("Anomaly Log Viewer")
 if os.path.exists("anomaly_log.csv"):
